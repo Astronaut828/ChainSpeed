@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPublicClient, http } from "viem";
-import { arbitrum, base, mainnet, optimism, polygon } from "viem/chains";
+import { arbitrum, base, celo, fantom, mainnet, optimism, polygon, avalanche, bsc } from "viem/chains";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
 export const ReadCalls = () => {
@@ -39,6 +39,22 @@ export const ReadCalls = () => {
       }),
       Polygon: createPublicClient({
         chain: polygon,
+        transport: http(),
+      }),
+      BinanceSmartChain: createPublicClient({
+        chain: bsc, 
+        transport: http(),
+      }),
+      Avalanche: createPublicClient({
+        chain: avalanche, 
+        transport: http(),
+      }),
+      Fantom: createPublicClient({
+        chain: fantom, 
+        transport: http(),
+      }),
+      Celo: createPublicClient({
+        chain: celo, 
         transport: http(),
       }),
     }),
@@ -116,8 +132,12 @@ export const ReadCalls = () => {
     return () => clearInterval(interval);
   }, [makeReadCalls]);
 
+  // Sort the chainData to find the fastest three
+  const sortedChainData = [...chainData].sort((a, b) => a.responseTimeMs - b.responseTimeMs);
+  const fastestChains = new Set(sortedChainData.slice(0, 3).map(chain => chain.chain)); 
+
   return (
-    <div className="w-full max-w-7xl p-6 border border-gray-200">
+    <div className="w-full max-w-7xl p-6 border-x border-gray-200">
       <div className="text-center mb-4">
         <div className="flex justify-center items-center gap-2">
           <h2 className="text-xl font-bold">Read Call Metrics</h2>
@@ -142,7 +162,8 @@ export const ReadCalls = () => {
             {chainData.map(chain => (
               <tr
                 key={chain.chain}
-                className={`hover:bg-base-100 border-b border-gray-200 ${chain.error ? "text-red-500" : ""}`}
+                className={`hover:bg-base-100 border-b border-gray-200 ${chain.error ? "text-red-500" : ""} 
+                  ${fastestChains.has(chain.chain) ? "text-neonGreen font-bold" : ""}`} // Change text color to neon green for the fastest 3 chains
               >
                 <td className="font-mono border-r border-gray-200">{chain.nameId}</td>
                 <td className="font-mono">{chain.responseTime}</td>
