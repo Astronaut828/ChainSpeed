@@ -112,7 +112,7 @@ export const ReadCalls = () => {
 
   useEffect(() => {
     makeReadCalls();
-    const interval = setInterval(makeReadCalls, 3000);
+    const interval = setInterval(makeReadCalls, 5000);
     return () => clearInterval(interval);
   }, [makeReadCalls]);
 
@@ -124,7 +124,7 @@ export const ReadCalls = () => {
           <div className="relative group">
             <InformationCircleIcon className="h-5 w-5 text-gray-500 hover:text-gray-700 cursor-help" />
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-gray-800 text-white text-sm rounded shadow-lg">
-              This displays response times for getBlockNumber() calls, refreshed every 3 seconds
+              This displays response times for getBlockNumber() calls, refreshed every 5 seconds
             </div>
           </div>
         </div>
