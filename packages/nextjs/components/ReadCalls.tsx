@@ -6,7 +6,7 @@ import { arbitrum, base, celo, fantom, mainnet, optimism, polygon, avalanche, bs
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
 const solanaChain = {
-  id: 101, // Solana mainnet ID
+  id: 101,
   name: "Solana",
   nativeCurrency: {
     name: "Solana",
@@ -15,13 +15,13 @@ const solanaChain = {
   },
   rpcUrls: {
     default: {
-      http: ["https://api.mainnet-beta.solana.com"], // Mainnet RPC URL
+      http: ["https://api.mainnet-beta.solana.com"],
     },
   },
 };
 
 const solanaClient = createPublicClient({
-  chain: solanaChain, // Use the custom Solana chain configuration
+  chain: solanaChain,
   transport: http(),
 });
 const fetchSolanaData = async (client: any) => {
