@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPublicClient, http } from "viem";
-import { arbitrum, base, celo, fantom, mainnet, optimism, polygon, avalanche, bsc } from "viem/chains";
+import { arbitrum,base,celo,fantom,mainnet,optimism,polygon,avalanche,bsc } from "viem/chains";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
 const solanaChain = {
