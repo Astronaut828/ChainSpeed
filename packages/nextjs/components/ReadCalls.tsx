@@ -49,27 +49,20 @@ export const ReadCalls = () => {
     }>
   >([]);
   const [timestamp, setTimestamp] = useState<string>("");
-  const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }));
+  const [currentTime, setCurrentTime] = useState<string>("");
   const isUpdating = useRef(false);
 
-  // Current Time
+  // Update current time every second
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(new Date().toLocaleString("en-US", {
-        month: "2-digit",
-        day: "2-digit",
+      const now = new Date();
+      const formattedTime = `${now.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
         hour12: false,
-      }));
+      })}`;
+      setCurrentTime(formattedTime); // Set the formatted current time
     }, 1000);
 
     return () => clearInterval(interval); // Cleanup on unmount
@@ -125,6 +118,15 @@ export const ReadCalls = () => {
     isUpdating.current = true;
 
     try {
+      const now = new Date();
+      const newTimestamp = `${now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })}`;
+      setTimestamp(newTimestamp); // Set the formatted timestamp
+
       const results = await Promise.all(
         Object.entries(clients).map(async ([chainName, client]) => {
           const startTime = performance.now();
