@@ -4,8 +4,8 @@
 import type { NextPage } from "next";
 // import { useAccount } from "wagmi";
 // import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { ReadCalls } from "~~/components/ReadCalls";
 // import { Address } from "~~/components/scaffold-eth";
+import { ReadCalls } from "~~/components/ReadCalls";
 
 const Home: NextPage = () => {
   // const { address: connectedAddress } = useAccount();

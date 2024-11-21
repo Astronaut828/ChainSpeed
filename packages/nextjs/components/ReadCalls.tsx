@@ -1,8 +1,7 @@
-"use client";
-
+import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPublicClient, http } from "viem";
-import { arbitrum,base,celo,fantom,mainnet,optimism,polygon,avalanche,bsc } from "viem/chains";
+import { arbitrum, avalanche, base, bsc, celo, fantom, mainnet, optimism, polygon } from "viem/chains";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
 const solanaChain = {
@@ -92,19 +91,19 @@ export const ReadCalls = () => {
         transport: http(),
       }),
       BinanceSmartChain: createPublicClient({
-        chain: bsc, 
+        chain: bsc,
         transport: http(),
       }),
       Avalanche: createPublicClient({
-        chain: avalanche, 
+        chain: avalanche,
         transport: http(),
       }),
       Fantom: createPublicClient({
-        chain: fantom, 
+        chain: fantom,
         transport: http(),
       }),
       Celo: createPublicClient({
-        chain: celo, 
+        chain: celo,
         transport: http(),
       }),
       Solana: solanaClient,
@@ -161,7 +160,7 @@ export const ReadCalls = () => {
               error: "Failed to fetch",
             };
           }
-        })
+        }),
       );
 
       // Only update if we have valid results
@@ -188,7 +187,7 @@ export const ReadCalls = () => {
 
   // Sort the chainData to find the fastest three
   const sortedChainData = [...chainData].sort((a, b) => a.responseTimeMs - b.responseTimeMs);
-  const fastestChains = new Set(sortedChainData.slice(0, 3).map(chain => chain.chain)); 
+  const fastestChains = new Set(sortedChainData.slice(0, 3).map(chain => chain.chain));
 
   return (
     <div className="w-full max-w-7xl p-6 border-x border-gray-200">
