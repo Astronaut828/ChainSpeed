@@ -5,6 +5,39 @@ import { createPublicClient, http } from "viem";
 import { arbitrum, base, celo, fantom, mainnet, optimism, polygon, avalanche, bsc } from "viem/chains";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
+const solanaChain = {
+  id: 101, // Solana mainnet ID
+  name: "Solana",
+  nativeCurrency: {
+    name: "Solana",
+    symbol: "SOL",
+    decimals: 9,
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://api.mainnet-beta.solana.com"], // Mainnet RPC URL
+    },
+  },
+};
+
+const solanaClient = createPublicClient({
+  chain: solanaChain, // Use the custom Solana chain configuration
+  transport: http(),
+});
+const fetchSolanaData = async (client: any) => {
+  const response = await fetch(client.chain.rpcUrls.default.http[0], {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "getBlockHeight",
+    }),
+  });
+  const data = await response.json();
+  return data.result;
+};
+
 export const ReadCalls = () => {
   const [chainData, setChainData] = useState<
     Array<{
@@ -16,7 +49,31 @@ export const ReadCalls = () => {
     }>
   >([]);
   const [timestamp, setTimestamp] = useState<string>("");
+  const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }));
   const isUpdating = useRef(false);
+
+  // Current Time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   // Move clients into useMemo
   const clients = useMemo(
@@ -57,20 +114,10 @@ export const ReadCalls = () => {
         chain: celo, 
         transport: http(),
       }),
+      Solana: solanaClient,
     }),
     [], // Empty dependency array as these don't change
   );
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-  };
 
   const makeReadCalls = useCallback(async () => {
     // Prevent multiple concurrent updates
@@ -78,14 +125,18 @@ export const ReadCalls = () => {
     isUpdating.current = true;
 
     try {
-      const newTimestamp = formatDate(new Date());
-      setTimestamp(newTimestamp);
-
       const results = await Promise.all(
         Object.entries(clients).map(async ([chainName, client]) => {
           const startTime = performance.now();
           try {
-            await client.getBlockNumber();
+            let response;
+            if (chainName === "Solana") {
+              response = await fetchSolanaData(client); // Fetch Solana data
+            } else {
+              const blockNumber = await client.getBlockNumber(); // Use getBlockNumber for other chains
+              // Convert response to a format compatible with the expected type
+              response = { number: BigInt(blockNumber) };
+            }
             const endTime = performance.now();
             const responseTimeMs = Math.round(endTime - startTime);
 
@@ -94,11 +145,12 @@ export const ReadCalls = () => {
               nameId: `${chainName} (${client.chain.id})`,
               responseTime: `${responseTimeMs}ms`,
               responseTimeMs,
+              ...(chainName === "Solana" ? { blockHeight: response } : {}), // Include block height for Solana
             };
           } catch (error) {
             const endTime = performance.now();
             const responseTimeMs = Math.round(endTime - startTime);
-            console.log(error);
+            console.error(error);
             return {
               chain: chainName,
               nameId: `${chainName} (${client.chain.id})`,
@@ -107,7 +159,7 @@ export const ReadCalls = () => {
               error: "Failed to fetch",
             };
           }
-        }),
+        })
       );
 
       // Only update if we have valid results
@@ -148,13 +200,14 @@ export const ReadCalls = () => {
             </div>
           </div>
         </div>
+        <p className="text-sm font-mono">Timestamp: {currentTime}</p>
         <p className="text-sm font-mono">Last call: {timestamp}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="table w-full border-collapse">
           <thead>
             <tr className="bg-base-200 border-b border-gray-200">
-              <th className="text-lg border-r border-gray-200">Chain & ID</th>
+              <th className="text-lg border-r border-gray-200">Chain / ID</th>
               <th className="text-lg">Response Time</th>
             </tr>
           </thead>
@@ -162,7 +215,7 @@ export const ReadCalls = () => {
             {chainData.map(chain => (
               <tr
                 key={chain.chain}
-                className={`hover:bg-base-100 border-b border-gray-200 ${chain.error ? "text-red-500" : ""} 
+                className={`hover:bg-base-100 border-b border-gray-200 ${chain.error ? "text-red-500" : ""}
                   ${fastestChains.has(chain.chain) ? "text-neonGreen font-bold" : ""}`} // Change text color to neon green for the fastest 3 chains
               >
                 <td className="font-mono border-r border-gray-200">{chain.nameId}</td>
