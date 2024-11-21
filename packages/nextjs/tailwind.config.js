@@ -42,22 +42,22 @@ module.exports = {
       },
       {
         dark: {
-          primary: "#212638",
-          "primary-content": "#F9FBFF",
-          secondary: "#323f61",
-          "secondary-content": "#F9FBFF",
-          accent: "#4969A6",
-          "accent-content": "#F9FBFF",
-          neutral: "#F9FBFF",
-          "neutral-content": "#385183",
-          "base-100": "#385183",
-          "base-200": "#2A3655",
-          "base-300": "#212638",
-          "base-content": "#F9FBFF",
-          info: "#385183",
-          success: "#34EEB6",
-          warning: "#FFCF72",
-          error: "#FF8863",
+          primary: "#1c1c1c", // Dark background
+          "primary-content": "#e0e0e0", // Light text color
+          secondary: "#ff4500", // Reddit orange
+          "secondary-content": "#F9FBFF", // Light content color
+          accent: "#0079d3", // Reddit blue
+          "accent-content": "#F9FBFF", // Light content color
+          neutral: "#2f2f2f", // Neutral dark color
+          "neutral-content": "#ffffff", // White text for neutral
+          "base-100": "#2a2a2a", // Base color for cards
+          "base-200": "#3a3a3a", // Slightly lighter dark
+          "base-300": "#4a4a4a", // Even lighter dark
+          "base-content": "#ffffff", // Content color
+          info: "#0079d3", // Blue for info
+          success: "#34EEB6", // Green for success
+          warning: "#FFCF72", // Yellow for warning
+          error: "#FF8863", // Red for error
 
           "--rounded-btn": "9999rem",
 
@@ -81,7 +81,7 @@ module.exports = {
         center: "0 0 12px -2px rgb(0 0 0 / 0.05)",
       },
       colors: {
-        neonGreen: '#39ff14', // Custom neon green color
+        neonGreen: '#32CD32', // Custom neon green color
       },
       animation: {
         "pulse-fast": "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite",
