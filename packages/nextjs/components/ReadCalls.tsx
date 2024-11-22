@@ -1,41 +1,8 @@
 import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPublicClient, http } from "viem";
-import { arbitrum, avalanche, base, bsc, celo, fantom, mainnet, optimism, polygon } from "viem/chains";
+import { arbitrum, avalanche, base, bsc, fantom, mainnet, optimism, polygon } from "viem/chains";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
-
-const solanaChain = {
-  id: 101,
-  name: "Solana",
-  nativeCurrency: {
-    name: "Solana",
-    symbol: "SOL",
-    decimals: 9,
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://api.mainnet-beta.solana.com"],
-    },
-  },
-};
-
-const solanaClient = createPublicClient({
-  chain: solanaChain,
-  transport: http(),
-});
-const fetchSolanaData = async (client: any) => {
-  const response = await fetch(client.chain.rpcUrls.default.http[0], {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: 1,
-      method: "getBlockHeight",
-    }),
-  });
-  const data = await response.json();
-  return data.result;
-};
 
 export const ReadCalls = () => {
   const [chainData, setChainData] = useState<
@@ -61,59 +28,104 @@ export const ReadCalls = () => {
         second: "2-digit",
         hour12: false,
       })}`;
-      setCurrentTime(formattedTime); // Set the formatted current time
+      setCurrentTime(formattedTime);
     }, 1000);
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => clearInterval(interval);
   }, []);
 
-  // Move clients into useMemo
+  const solanaChain = {
+    id: 101,
+    name: "Solana",
+    nativeCurrency: {
+      name: "Solana",
+      symbol: "SOL",
+      decimals: 9,
+    },
+    rpcUrls: {
+      default: {
+        http: [`https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`],
+      },
+    },
+  };
+
+  const solanaClient = createPublicClient({
+    chain: solanaChain,
+    transport: http(solanaChain.rpcUrls.default.http[0]),
+  });
+
+  const fetchSolanaData = async (client: any) => {
+    try {
+      const response = await fetch(client.transport.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "getHealth",
+          params: [null, { commitment: "finalized" }],
+        }),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        console.error("Error Response Text:", responseText);
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.result; // Adapt based on the response structure
+    } catch (error) {
+      // Safely handle error
+      if (error instanceof Error) {
+        console.error("Fetch Solana Data Error:", error.message);
+      } else {
+        console.error("Unknown Error:", error);
+      }
+    }
+  };
+
   const clients = useMemo(
     () => ({
       Ethereum: createPublicClient({
         chain: mainnet,
-        transport: http(),
+        transport: http(`https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       Base: createPublicClient({
         chain: base,
-        transport: http(),
+        transport: http(`https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       Arbitrum: createPublicClient({
         chain: arbitrum,
-        transport: http(),
+        transport: http(`https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       Optimism: createPublicClient({
         chain: optimism,
-        transport: http(),
+        transport: http(`https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       Polygon: createPublicClient({
         chain: polygon,
-        transport: http(),
+        transport: http(`https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       BinanceSmartChain: createPublicClient({
         chain: bsc,
-        transport: http(),
+        transport: http(`https://bnb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       Avalanche: createPublicClient({
         chain: avalanche,
-        transport: http(),
+        transport: http(`https://avax-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       Fantom: createPublicClient({
         chain: fantom,
-        transport: http(),
-      }),
-      Celo: createPublicClient({
-        chain: celo,
-        transport: http(),
+        transport: http(`https://fantom-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
       Solana: solanaClient,
     }),
-    [], // Empty dependency array as these don't change
+    [],
   );
 
   const makeReadCalls = useCallback(async () => {
-    // Prevent multiple concurrent updates
-    if (isUpdating.current) return;
+    if (isUpdating.current) return; // Prevent concurrent updates
     isUpdating.current = true;
 
     try {
@@ -124,40 +136,49 @@ export const ReadCalls = () => {
         second: "2-digit",
         hour12: false,
       })}`;
-      setTimestamp(newTimestamp); // Set the formatted timestamp
+      setTimestamp(newTimestamp);
 
       const results = await Promise.all(
         Object.entries(clients).map(async ([chainName, client]) => {
           const startTime = performance.now();
           try {
             let response;
+
             if (chainName === "Solana") {
-              response = await fetchSolanaData(client); // Fetch Solana data
+              response = await fetchSolanaData(client); // Solana-specific call
             } else {
-              const blockNumber = await client.getBlockNumber(); // Use getBlockNumber for other chains
-              // Convert response to a format compatible with the expected type
+              const blockNumber = await client.getBlockNumber(); // Generic block number fetch
               response = { number: BigInt(blockNumber) };
             }
+
             const endTime = performance.now();
             const responseTimeMs = Math.round(endTime - startTime);
 
             return {
               chain: chainName,
-              nameId: `${chainName} (${client.chain.id})`,
+              nameId: `${chainName} (${client.chain?.id || "Unknown ID"})`,
               responseTime: `${responseTimeMs}ms`,
               responseTimeMs,
-              ...(chainName === "Solana" ? { blockHeight: response } : {}), // Include block height for Solana
+              ...(chainName === "Solana" ? { blockHeight: response } : {}),
             };
           } catch (error) {
             const endTime = performance.now();
             const responseTimeMs = Math.round(endTime - startTime);
-            console.error(error);
+
+            let errorMessage = "An unknown error occurred";
+            if (error instanceof Error) {
+              errorMessage = error.message;
+              console.error(`${chainName} error:`, errorMessage);
+            } else {
+              console.error(`${chainName} error:`, error);
+            }
+
             return {
               chain: chainName,
-              nameId: `${chainName} (${client.chain.id})`,
+              nameId: `${chainName} (${client.chain?.id || "Unknown ID"})`,
               responseTime: `${responseTimeMs}ms`,
               responseTimeMs,
-              error: "Failed to fetch",
+              error: errorMessage,
             };
           }
         }),
