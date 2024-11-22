@@ -100,7 +100,7 @@ export const WriteCalls = () => {
       // Simulate a transfer call with multiple statuses
       const statuses = [
         `Initiating transaction on ${selectedChain}...`,
-        `Transaction sent`, 
+        `Transaction sent`,
         `Waiting for confirmation...`,
         `Transaction confirmed!`,
       ];
