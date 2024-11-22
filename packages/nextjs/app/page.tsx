@@ -6,6 +6,7 @@ import type { NextPage } from "next";
 // import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 // import { Address } from "~~/components/scaffold-eth";
 import { ReadCalls } from "~~/components/ReadCalls";
+import { WriteCalls } from "~~/components/WriteCalls";
 
 const Home: NextPage = () => {
   // const { address: connectedAddress } = useAccount();
@@ -23,8 +24,13 @@ const Home: NextPage = () => {
             <Address address={connectedAddress} />
           </div> */}
         </div>
-        <div className="pt-10">
-          <ReadCalls />
+        <div className="pt-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:pr-4">
+            <ReadCalls />
+          </div>
+          <div className="border-b md:border-b-0 border-gray-200 md:pl-4">
+            <WriteCalls />
+          </div>
         </div>
 
         <div className="flex-grow bg-base-300 w-full mt-16 px-8 py-12">

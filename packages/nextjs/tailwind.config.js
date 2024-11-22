@@ -82,6 +82,7 @@ module.exports = {
       },
       colors: {
         neonGreen: '#32CD32', // Custom neon green color
+        customOrange: '#ff4500', // Custom orange color
       },
       animation: {
         "pulse-fast": "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite",

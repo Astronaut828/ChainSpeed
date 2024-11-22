@@ -190,7 +190,7 @@ export const ReadCalls = () => {
   const fastestChains = new Set(sortedChainData.slice(0, 3).map(chain => chain.chain));
 
   return (
-    <div className="w-full max-w-7xl p-6 border-x border-gray-200">
+    <div className="w-full max-w-7xl p-6">
       <div className="text-center mb-4">
         <div className="flex justify-center items-center gap-2">
           <h2 className="text-xl font-bold">Read Call Metrics</h2>
