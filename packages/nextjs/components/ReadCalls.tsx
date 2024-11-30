@@ -134,6 +134,7 @@ export const ReadCalls = () => {
       }),
       Solana: solanaClient,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

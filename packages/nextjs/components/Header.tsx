@@ -89,9 +89,14 @@ export const Header = () => {
           )}
         </div>
         <Link href="/" passHref className="hidden lg:flex items-center gap-2 ml-4 mr-6 shrink-0">
-          <div className="flex relative w-10 h-10">
-            <Image alt="SE2 logo" className="cursor-pointer" fill src="/logo.svg" />
-          </div>
+          <Image
+            src="/ChainSpeed_Logo.png"
+            alt="ChainSpeed Logo"
+            width={40}
+            height={40}
+            className="h-10 w-auto"
+            priority
+          />
           <div className="flex flex-col">
             <span className="font-bold leading-tight">ChainSpeed</span>
             <span className="text-xs">Real-Time Blockchain Speed Analysis</span>
