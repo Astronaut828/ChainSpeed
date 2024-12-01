@@ -16,6 +16,32 @@ const chainNicknames: Record<string, string> = {
   Solana: "SOL",
 };
 
+const WETH_ABI = [
+  {
+    constant: true,
+    inputs: [{ name: "owner", type: "address" }],
+    name: "balanceOf",
+    outputs: [{ name: "", type: "uint256" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
+
+const WETH_ADDRESSES = {
+  Ethereum: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  Base: "0x4200000000000000000000000000000000000006",
+  Arbitrum: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+  Optimism: "0x4200000000000000000000000000000000000006",
+  Polygon: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+  BinanceSmartChain: "0x7b03A103FC847348e5e59F8D3B0740c48D597973",
+  Avalanche: "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
+  Fantom: "0xA59982c7A272839cBd93e02Bd8978E9a78189AB5",
+};
+
+const TEST_ADDRESS = "0x174b7A7Bdcd254c32F4b7f03543F382c47a3BaCA";
+const SOLANA_TEST_ADDRESS = "4jMMA1KDamEbpkwTvWDcpb97pLB1meexoeUnntRpFRRd";
+
 export const ReadCalls = () => {
   const [chainData, setChainData] = useState<
     Array<{
@@ -71,30 +97,41 @@ export const ReadCalls = () => {
     try {
       const response = await fetch(client.transport.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
+        },
         body: JSON.stringify({
           jsonrpc: "2.0",
           id: 1,
-          method: "getHealth",
-          params: [null, { commitment: "finalized" }],
+          method: "getTokenAccountsByOwner",
+          params: [
+            SOLANA_TEST_ADDRESS,
+            {
+              mint: "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", // WETH mint address
+            },
+            {
+              encoding: "jsonParsed",
+            },
+          ],
         }),
       });
 
       if (!response.ok) {
-        const responseText = await response.text();
-        console.error("Error Response Text:", responseText);
         throw new Error(`HTTP Error: ${response.status}`);
       }
 
       const data = await response.json();
-      return data.result; // Adapt based on the response structure
-    } catch (error) {
-      // Safely handle error
-      if (error instanceof Error) {
-        console.error("Fetch Solana Data Error:", error.message);
-      } else {
-        console.error("Unknown Error:", error);
+
+      if (data.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount) {
+        const tokenAmount = data.result.value[0].account.data.parsed.info.tokenAmount;
+        return tokenAmount.uiAmount;
       }
+
+      return 0;
+    } catch (error) {
+      console.error("Fetch Solana Data Error:", error);
+      throw error;
     }
   };
 
@@ -168,7 +205,15 @@ export const ReadCalls = () => {
             if (chainName === "Solana") {
               response = await Promise.race([fetchSolanaData(client), timeoutPromise]);
             } else {
-              response = await Promise.race([client.getBlockNumber(), timeoutPromise]);
+              response = await Promise.race([
+                client.readContract({
+                  address: WETH_ADDRESSES[chainName as keyof typeof WETH_ADDRESSES],
+                  abi: WETH_ABI,
+                  functionName: "balanceOf",
+                  args: [TEST_ADDRESS],
+                }),
+                timeoutPromise,
+              ]);
             }
 
             const endTime = performance.now();
@@ -179,10 +224,10 @@ export const ReadCalls = () => {
               nameId: `${chainName} (${client.chain?.id || "Unknown ID"})`,
               responseTime: `${responseTimeMs}ms`,
               responseTimeMs,
-              ...(chainName === "Solana" ? { blockHeight: response } : {}),
+              balance: response,
             };
           } catch (error) {
-            console.error(`${chainName} call failed:`, error);
+            console.error(`${chainName} Balance Check Failed:`, error);
             return {
               chain: chainName,
               nameId: `${chainName} (${client.chain?.id || "Unknown ID"})`,
@@ -246,7 +291,7 @@ export const ReadCalls = () => {
             <InformationCircleIcon className="h-5 w-5 text-gray-500 hover:text-gray-700 cursor-help" />
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-base-300 border border-customOrange text-base-content text-sm rounded shadow-lg">
               Displays response times for{" "}
-              <code className="bg-base-200 text-customOrange px-1 py-0.5 rounded font-mono">getBalance()</code> calls,
+              <code className="bg-base-200 text-customOrange px-1 py-0.5 rounded font-mono">balanceOf()</code> calls,
               refreshed every 6 seconds
             </div>
           </div>
@@ -257,8 +302,8 @@ export const ReadCalls = () => {
       <div className="w-full">
         <table className="table w-full border-collapse">
           <thead>
-            <tr className="bg-base-200 border-b border-gray-200">
-              <th className="text-lg border-r text-customOrange border-gray-200">Chain / ID</th>
+            <tr className="bg-base-200 border-b border-blue-200">
+              <th className="text-lg border-r text-customOrange border-blue-200">Chain / ID</th>
               <th className="text-lg text-customOrange">Response Time</th>
             </tr>
           </thead>
@@ -266,42 +311,110 @@ export const ReadCalls = () => {
             {chainData.map(chain => (
               <tr
                 key={chain.chain}
-                className={`hover:bg-base-100 border-b border-gray-200 ${chain.error ? "text-red-500" : ""}
+                className={`hover:bg-base-100 border-b border-blue-200 ${chain.error ? "text-red-500" : ""}
                     ${fastestChains.has(chain.chain) ? "text-neonGreen font-bold" : ""}`}
               >
-                <td className="font-mono border-r border-gray-200">{chain.nameId}</td>
+                <td className="font-mono border-r border-blue-200">{chain.nameId}</td>
                 <td className="font-mono">{chain.responseTime}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="w-full">
-        <p className="text-sm text-base-600 text-center font-mono mb-2">Average Response Time (Last 10 calls)</p>
-        <table className="table w-full border-collapse">
-          <thead>
-            <tr className="bg-base-200 border border-gray-200">
-              {[...chainData]
-                .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                .map(chain => (
-                  <th key={chain.chain} className="text-sm text-customOrange border-r border-gray-200">
-                    {chainNicknames[chain.chain] || chain.chain}
-                  </th>
-                ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border border-gray-200">
-              {[...chainData]
-                .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                .map(chain => (
-                  <td key={chain.chain} className="font-mono text-center border-r border-gray-200">
-                    {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
-                  </td>
-                ))}
-            </tr>
-          </tbody>
-        </table>
+      <div className="w-full max-w-7xl">
+        <div className="flex justify-center items-center gap-2 mb-2">
+          <p className="text-sm text-base-600 text-center font-mono">Average Response Time (Last 10 calls)</p>
+          <div className="relative group">
+            <InformationCircleIcon className="h-5 w-5 text-gray-500 hover:text-gray-700 cursor-help" />
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-base-300 border border-customOrange text-base-content text-sm rounded shadow-lg">
+              Please wait for a few calls to complete to get accurate average response times
+            </div>
+          </div>
+        </div>
+        <div className="md:hidden">
+          {" "}
+          {/* Mobile view */}
+          <table className="table w-full border-collapse mb-2">
+            <thead>
+              <tr className="bg-base-200 border border-blue-200">
+                {[...chainData]
+                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                  .slice(0, 5)
+                  .map(chain => (
+                    <th key={chain.chain} className="text-sm text-customOrange border-r border-blue-200">
+                      {chainNicknames[chain.chain] || chain.chain}
+                    </th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border border-blue-200">
+                {[...chainData]
+                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                  .slice(0, 5)
+                  .map(chain => (
+                    <td key={chain.chain} className="font-mono text-center border-r border-blue-200">
+                      {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
+                    </td>
+                  ))}
+              </tr>
+            </tbody>
+          </table>
+          <table className="table w-full border-collapse">
+            <thead>
+              <tr className="bg-base-200 border border-blue-200">
+                {[...chainData]
+                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                  .slice(5)
+                  .map(chain => (
+                    <th key={chain.chain} className="text-sm text-customOrange border-r border-blue-200">
+                      {chainNicknames[chain.chain] || chain.chain}
+                    </th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border border-blue-200">
+                {[...chainData]
+                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                  .slice(5)
+                  .map(chain => (
+                    <td key={chain.chain} className="font-mono text-center border-r border-blue-200">
+                      {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
+                    </td>
+                  ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="hidden md:block">
+          {" "}
+          {/* Desktop view */}
+          <table className="table w-full border-collapse">
+            <thead>
+              <tr className="bg-base-200 border border-blue-200">
+                {[...chainData]
+                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                  .map(chain => (
+                    <th key={chain.chain} className="text-sm text-customOrange border-r border-blue-200">
+                      {chainNicknames[chain.chain] || chain.chain}
+                    </th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border border-blue-200">
+                {[...chainData]
+                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                  .map(chain => (
+                    <td key={chain.chain} className="font-mono text-center border-r border-blue-200">
+                      {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
+                    </td>
+                  ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
