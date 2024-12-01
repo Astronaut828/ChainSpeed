@@ -254,8 +254,13 @@ export const ReadCalls = () => {
                 // Skip failed requests
                 if (result.responseTimeMs === 0) return;
 
-                const times = [...(prev[chain]?.times || []), result.responseTimeMs].slice(-10);
-                const average = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                // Get existing times array or create new one
+                const existingTimes = prev[chain]?.times || [];
+                // Add new time and keep only last 10
+                const times = [...existingTimes, result.responseTimeMs].slice(-10);
+                // Calculate average using actual array length
+                const average = Math.round(times.reduce((sum, time) => sum + time, 0) / times.length);
+
                 newHistory[chain] = { times, average };
               });
               return newHistory;
