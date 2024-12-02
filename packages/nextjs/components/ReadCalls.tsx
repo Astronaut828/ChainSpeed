@@ -306,7 +306,7 @@ export const ReadCalls = () => {
               <tr className="bg-base-200 border border-blue-200">
                 {[...chainData]
                   .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                  .slice(0, 5)
+                  .slice(0, 4)
                   .map(chain => (
                     <th key={chain.chain} className="text-sm text-customOrange border-r border-blue-200">
                       {chainNicknames[chain.chain] || chain.chain}
@@ -318,7 +318,7 @@ export const ReadCalls = () => {
               <tr className="border border-blue-200">
                 {[...chainData]
                   .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                  .slice(0, 5)
+                  .slice(0, 4)
                   .map(chain => (
                     <td key={chain.chain} className="font-mono text-center border-r border-blue-200">
                       {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
@@ -332,7 +332,7 @@ export const ReadCalls = () => {
               <tr className="bg-base-200 border border-blue-200">
                 {[...chainData]
                   .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                  .slice(5)
+                  .slice(4)
                   .map(chain => (
                     <th key={chain.chain} className="text-sm text-customOrange border-r border-blue-200">
                       {chainNicknames[chain.chain] || chain.chain}
@@ -344,7 +344,7 @@ export const ReadCalls = () => {
               <tr className="border border-blue-200">
                 {[...chainData]
                   .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                  .slice(5)
+                  .slice(4)
                   .map(chain => (
                     <td key={chain.chain} className="font-mono text-center border-r border-blue-200">
                       {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
