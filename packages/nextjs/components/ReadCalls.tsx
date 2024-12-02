@@ -40,7 +40,15 @@ const WETH_ADDRESSES = {
 };
 
 const TEST_ADDRESS = "0x174b7A7Bdcd254c32F4b7f03543F382c47a3BaCA";
-const SOLANA_TEST_ADDRESS = "4jMMA1KDamEbpkwTvWDcpb97pLB1meexoeUnntRpFRRd";
+
+// Add this type definition at the top of the file with other types
+type RequestResult = {
+  data: any;
+  timing: {
+    startTime: number;
+    endTime: number;
+  };
+};
 
 export const ReadCalls = () => {
   const [chainData, setChainData] = useState<
@@ -72,68 +80,6 @@ export const ReadCalls = () => {
 
     return () => clearInterval(interval);
   }, []);
-
-  const solanaChain = {
-    id: 101,
-    name: "Solana",
-    nativeCurrency: {
-      name: "Solana",
-      symbol: "SOL",
-      decimals: 9,
-    },
-    rpcUrls: {
-      default: {
-        http: [`https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`],
-      },
-    },
-  };
-
-  const solanaClient = createPublicClient({
-    chain: solanaChain,
-    transport: http(solanaChain.rpcUrls.default.http[0]),
-  });
-
-  const fetchSolanaData = async (client: any) => {
-    try {
-      const response = await fetch(client.transport.url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "getTokenAccountsByOwner",
-          params: [
-            SOLANA_TEST_ADDRESS,
-            {
-              mint: "7vfCXTUXx5WJV5JADk17DUJ4ksgau7utNKj4b963voxs", // WETH mint address
-            },
-            {
-              encoding: "jsonParsed",
-            },
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount) {
-        const tokenAmount = data.result.value[0].account.data.parsed.info.tokenAmount;
-        return tokenAmount.uiAmount;
-      }
-
-      return 0;
-    } catch (error) {
-      console.error("Fetch Solana Data Error:", error);
-      throw error;
-    }
-  };
 
   const clients = useMemo(
     () => ({
@@ -169,7 +115,6 @@ export const ReadCalls = () => {
         chain: fantom,
         transport: http(`https://fantom-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
       }),
-      Solana: solanaClient,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -194,40 +139,59 @@ export const ReadCalls = () => {
 
       const results = await Promise.all(
         Object.entries(clients).map(async ([chainName, client]) => {
-          const startTime = performance.now();
           try {
-            let response;
-            // Add timeout to prevent hanging requests
+            // For EVM chains
+            const contractParams: {
+              address: string;
+              abi: typeof WETH_ABI;
+              functionName: "balanceOf";
+              args: [string];
+            } = {
+              address: WETH_ADDRESSES[chainName as keyof typeof WETH_ADDRESSES],
+              abi: WETH_ABI,
+              functionName: "balanceOf",
+              args: [TEST_ADDRESS],
+            };
+
+            // Start timing just before the network request
+            const startTime = performance.now();
+            const preparedRequest = client
+              .readContract({
+                abi: contractParams.abi,
+                address: contractParams.address,
+                functionName: contractParams.functionName,
+                args: contractParams.args,
+              })
+              .then(response => ({
+                data: response,
+                timing: { startTime, endTime: performance.now() },
+              }));
+
+            // Execute with timeout
             const timeoutPromise = new Promise((_, reject) =>
               setTimeout(() => reject(new Error("Request timeout")), 5000),
             );
 
-            if (chainName === "Solana") {
-              response = await Promise.race([fetchSolanaData(client), timeoutPromise]);
-            } else {
-              response = await Promise.race([
-                client.readContract({
-                  address: WETH_ADDRESSES[chainName as keyof typeof WETH_ADDRESSES],
-                  abi: WETH_ABI,
-                  functionName: "balanceOf",
-                  args: [TEST_ADDRESS],
-                }),
-                timeoutPromise,
-              ]);
-            }
+            const result = (await Promise.race([preparedRequest, timeoutPromise])) as RequestResult;
+            const responseTimeMs = Math.round(result.timing.endTime - result.timing.startTime);
 
-            const endTime = performance.now();
-            const responseTimeMs = Math.round(endTime - startTime);
+            // Log detailed timing information
+            console.log(`${chainName} Response Time:`, {
+              total: responseTimeMs,
+              startTime: result.timing.startTime,
+              endTime: result.timing.endTime,
+              response: result.data?.toString(),
+            });
 
             return {
               chain: chainName,
               nameId: `${chainName} (${client.chain?.id || "Unknown ID"})`,
               responseTime: `${responseTimeMs}ms`,
               responseTimeMs,
-              balance: response,
+              balance: result.data,
             };
           } catch (error) {
-            console.error(`${chainName} Balance Check Failed:`, error);
+            console.error(`${chainName} call failed:`, error);
             return {
               chain: chainName,
               nameId: `${chainName} (${client.chain?.id || "Unknown ID"})`,
@@ -251,14 +215,10 @@ export const ReadCalls = () => {
               const newHistory = { ...prev };
               sortedResults.forEach(result => {
                 const chain = result.chain;
-                // Skip failed requests
                 if (result.responseTimeMs === 0) return;
 
-                // Get existing times array or create new one
                 const existingTimes = prev[chain]?.times || [];
-                // Add new time and keep only last 10
                 const times = [...existingTimes, result.responseTimeMs].slice(-10);
-                // Calculate average using actual array length
                 const average = Math.round(times.reduce((sum, time) => sum + time, 0) / times.length);
 
                 newHistory[chain] = { times, average };
@@ -328,7 +288,9 @@ export const ReadCalls = () => {
       </div>
       <div className="w-full max-w-7xl">
         <div className="flex justify-center items-center gap-2 mb-2">
-          <p className="text-sm text-base-600 text-center font-mono">Average Response Time (Last 10 calls)</p>
+          <p className="text-sm text-base-600 text-center font-mono">
+            Average Response Time <br /> (Last 10 calls)
+          </p>
           <div className="relative group">
             <InformationCircleIcon className="h-5 w-5 text-gray-500 hover:text-gray-700 cursor-help" />
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-base-300 border border-customOrange text-base-content text-sm rounded shadow-lg">
@@ -339,7 +301,7 @@ export const ReadCalls = () => {
         <div className="md:hidden">
           {" "}
           {/* Mobile view */}
-          <table className="table w-full border-collapse mb-2">
+          <table className="table w-full max-w-full border-collapse mb-2">
             <thead>
               <tr className="bg-base-200 border border-blue-200">
                 {[...chainData]
