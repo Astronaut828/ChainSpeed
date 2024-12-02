@@ -21,7 +21,6 @@ ChainSpeed is a real-time blockchain analytics tool that measures and compares t
 -   BNB Chain 💛
 -   Avalanche ❄️
 -   Fantom 👻
--   Solana 🌞
 
 ## 🚀 Features
 
