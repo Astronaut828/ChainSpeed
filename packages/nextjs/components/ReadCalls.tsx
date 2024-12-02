@@ -357,30 +357,32 @@ export const ReadCalls = () => {
         <div className="hidden md:block">
           {" "}
           {/* Desktop view */}
-          <table className="table w-full border-collapse">
-            <thead>
-              <tr className="bg-base-200 border border-blue-200">
-                {[...chainData]
-                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                  .map(chain => (
-                    <th key={chain.chain} className="text-sm text-customOrange border-r border-blue-200">
-                      {chainNicknames[chain.chain] || chain.chain}
-                    </th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border border-blue-200">
-                {[...chainData]
-                  .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
-                  .map(chain => (
-                    <td key={chain.chain} className="font-mono text-center border-r border-blue-200">
-                      {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
-                    </td>
-                  ))}
-              </tr>
-            </tbody>
-          </table>
+          <div className="table-responsive">
+            <table className="table w-full border-collapse">
+              <thead>
+                <tr className="bg-base-200 border border-blue-200">
+                  {[...chainData]
+                    .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                    .map(chain => (
+                      <th key={chain.chain} className="text-sm text-customOrange border-r border-blue-200">
+                        {chainNicknames[chain.chain] || chain.chain}
+                      </th>
+                    ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border border-blue-200">
+                  {[...chainData]
+                    .sort((a, b) => (chainHistory[a.chain]?.average || 0) - (chainHistory[b.chain]?.average || 0))
+                    .map(chain => (
+                      <td key={chain.chain} className="font-mono text-center border-r border-blue-200">
+                        {chainHistory[chain.chain]?.average ? `${chainHistory[chain.chain].average}ms` : "-"}
+                      </td>
+                    ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
