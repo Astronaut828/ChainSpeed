@@ -8,6 +8,7 @@ import type { NextPage } from "next";
 // import { Address } from "~~/components/scaffold-eth";
 import { ReadCalls } from "~~/components/ReadCalls";
 import { WriteCalls } from "~~/components/WriteCalls";
+import { GasPrice } from "~~/components/GasPrice";
 
 const Home: NextPage = () => {
   // const { address: connectedAddress } = useAccount();
@@ -33,6 +34,7 @@ const Home: NextPage = () => {
           </div>
           <div className="border-b md:border-b-0 border-gray-200 md:pl-4">
             <WriteCalls />
+            <GasPrice />
           </div>
         </div>
 
