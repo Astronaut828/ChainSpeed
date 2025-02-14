@@ -73,7 +73,7 @@ export const GasPrice = () => {
             return {
               chain: chainName,
               nameId: `${chainName} (${client.chain?.id || "Unknown ID"})`,
-              gasPrice: `${gasPriceInGwei.toFixed(2)} Gwei`,
+              gasPrice: `${gasPriceInGwei.toFixed(4)} Gwei`,
               gasPriceNumber: gasPriceInGwei,
             };
           } catch (error) {

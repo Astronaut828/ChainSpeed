@@ -34,7 +34,7 @@ const Home: NextPage = () => {
           </div>
           <div className="border-b md:border-b-0 border-gray-200 md:pl-4">
             <WriteCalls />
-            <GasPrice />
+            {/* <GasPrice /> */}
           </div>
         </div>
 
