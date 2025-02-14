@@ -8,7 +8,7 @@ import type { NextPage } from "next";
 // import { Address } from "~~/components/scaffold-eth";
 import { ReadCalls } from "~~/components/ReadCalls";
 import { WriteCalls } from "~~/components/WriteCalls";
-import { GasPrice } from "~~/components/GasPrice";
+// import { GasPrice } from "~~/components/GasPrice";
 
 const Home: NextPage = () => {
   // const { address: connectedAddress } = useAccount();
